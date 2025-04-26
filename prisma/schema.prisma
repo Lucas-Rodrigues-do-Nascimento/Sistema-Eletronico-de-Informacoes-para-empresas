@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  nome      String
+  createdAt DateTime @default(now())
+}
+
+model Processo {
+  id             Int             @id @default(autoincrement())
+  numero         String?         @unique
+  tipo           String
+  especificacao  String
+  interessado    String
+  acesso         String
+  observacoes    String?
+  criadoEm       DateTime        @default(now())
+  arquivado      Boolean         @default(false)
+
+  // Setor onde o processo foi criado (origem)
+  setorOrigemId  Int
+  setorOrigem    Setor           @relation("SetorOrigem", fields: [setorOrigemId], references: [id])
+
+  documentos     Documento[]     @relation("DocumentosDoProcesso")
+  movimentacoes  Movimentacao[]  
+}
+
+model Documento {
+  id                Int       @id @default(autoincrement())
+  nome              String
+  tipo              String
+  processoId        Int
+  processo          Processo  @relation("DocumentosDoProcesso", fields: [processoId], references: [id])
+  conteudo          Bytes?
+  conteudoHtml      String?   @db.LongText
+  arquivo           Boolean   @default(false)
+  arquivoFisico     String?
+  assinadoPor       String?
+  cargoAssinatura   String?
+  assinadoEm        DateTime?
+  hashConteudo      String?
+  codigoVerificacao String?
+  criadoEm          DateTime  @default(now())
+}
+
+model Movimentacao {
+  id                        Int      @id @default(autoincrement())
+  processoId                Int
+  processo                  Processo @relation(fields: [processoId], references: [id])
+
+  deSetor                   Int
+  paraSetor                 Int
+  observacoes               String?
+  manterAbertoNoSetorOrigem Boolean  @default(false)
+  ativo                     Boolean  @default(true)
+  criadoEm                  DateTime @default(now())
+
+  de   Setor @relation("MovimentacaoDe",   fields: [deSetor],   references: [id])
+  para Setor @relation("MovimentacaoPara", fields: [paraSetor], references: [id])
+}
+
+model Setor {
+  id        Int         @id @default(autoincrement())
+  nome      String
+  unidade   UnidadeLoja @relation(fields: [unidadeId], references: [id])
+  unidadeId Int
+  criadoEm  DateTime    @default(now())
+
+  colaboradores     Colaborador[] 
+  movimentacoesDe   Movimentacao[] @relation("MovimentacaoDe")
+  movimentacoesPara Movimentacao[] @relation("MovimentacaoPara")
+
+  // Processos cuja origem é este setor
+  processosCriados  Processo[]     @relation("SetorOrigem")
+}
+
+model UnidadeLoja {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  descricao String?
+  cidade    String?
+  uf        String?
+  tipo      String?
+  criadoEm  DateTime @default(now())
+
+  setores Setor[]
+}
+
+model Colaborador {
+  id          Int         @id @default(autoincrement())
+  nome        String
+  email       String      @unique
+  cpf         String
+  telefone    String
+  cargo       String
+  senha       String
+  ativo       Boolean     @default(true)
+  setor       Setor?      @relation(fields: [setorId], references: [id])
+  setorId     Int?
+  permissoes  Permissao[] @relation("ColaboradorPermissoes")
+}
+
+model TipoDocumento {
+  id           Int      @id @default(autoincrement())
+  nome         String
+  descricao    String?
+  modeloPadrao String?
+  criadoEm     DateTime @default(now())
+}
+
+model TipoProcesso {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  descricao String?
+  criadoEm  DateTime @default(now())
+}
+
+model Classificacao {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  descricao String?
+  criadoEm  DateTime @default(now())
+}
+
+model MotivoArquivamento {
+  id        Int      @id @default(autoincrement())
+  descricao String
+  criadoEm  DateTime @default(now())
+}
+
+model Permissao {
+  id            Int           @id @default(autoincrement())
+  nome          String
+  codigo        String        @unique
+  descricao     String?
+  criadoEm      DateTime      @default(now())
+    colaboradores Colaborador[] @relation("ColaboradorPermissoes") // <- adicionado explicitamente aqui
+}
