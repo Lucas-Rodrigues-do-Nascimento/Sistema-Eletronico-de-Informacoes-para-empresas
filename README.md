@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 PROTON - Sistema de Gestão Interna
 
-## Getting Started
+O **PROTON** é um sistema administrativo interno focado em **gestão de processos, documentos e colaboradores**, desenvolvido com tecnologias modernas para garantir **segurança, performance e escalabilidade**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🛠️ Tecnologias Utilizadas
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 🔹 Frontend
+- **Next.js** (`app/` router)
+- **React** (18/19)
+- **TypeScript**
+- **Tailwind CSS** (estilização rápida e responsiva)
+- **Shadcn/UI** (biblioteca de componentes moderna baseada em Tailwind)
+- **Radix UI** (Popover, Combobox, acessibilidade)
+- **CMDK** (Command menu e busca em selects)
+- **Sonner** (sistema de notificações/toasts)
+- **clsx/cn** (utilitário para manipular classes CSS)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🔹 Backend (APIs internas Next.js)
+- **Prisma ORM** (gestão de banco de dados)
+- **MySQL** (banco de dados relacional)
+- **bcryptjs** (criptografia de senhas)
+- **pdf-lib** (geração e assinatura de PDFs)
+- **SHA-256** (controle de integridade de documentos)
+- **Puppeteer** (planejado para renderizar documentos em PDF)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🔹 Outras Tecnologias
+- **Radix UI Popover + Command** (para select multi seleção moderna)
+- **QR Code nos documentos assinados** (para verificação de autenticidade)
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📋 Funcionalidades Principais
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- ✅ **Login com autenticação segura** (email e senha criptografados)
+- ✅ **Cadastro e gestão de colaboradores**
+- ✅ **Gerenciamento de permissões de acesso** (múltiplas permissões por colaborador)
+- ✅ **Cadastro e gestão de setores**
+- ✅ **Controle de processos e tramitação entre setores**
+- ✅ **Criação e gestão de documentos internos e externos**
+- ✅ **Assinatura digital de documentos internos**
+- ✅ **Geração de QR Code para verificação de documentos assinados**
+- ✅ **Arquivamento e reabertura de processos**
+- ✅ **Visualização e download de documentos em PDF**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
+## 🏗️ Estrutura do Projeto:
 
-## Deploy on Vercel
+📦 src/
+ ┣ 📂 app/
+ ┃ ┣ 📂 api/
+ ┃ ┃ ┣ 📂 colaboradores/        # Endpoints de CRUD para colaboradores (cadastrar, listar, editar, excluir)
+ ┃ ┃ ┣ 📂 permissoes/            # Endpoints de CRUD para permissões
+ ┃ ┃ ┣ 📂 setores/               # Endpoints para gerenciamento de setores
+ ┃ ┃ ┣ 📂 processos/             # Endpoints para processos (criar, tramitar, arquivar)
+ ┃ ┃ ┗ 📂 documentos/            # Endpoints para upload e assinatura de documentos
+ ┃ ┣ 📂 cadastros/
+ ┃ ┃ ┣ 📂 colaboradores/         # Página de cadastro e listagem de colaboradores
+ ┃ ┃ ┣ 📂 setores/               # Página de cadastro de setores
+ ┃ ┃ ┣ 📂 tipo-de-processo/       # Página para cadastrar tipos de processos
+ ┃ ┃ ┗ 📂 tipo-de-documento/      # Página para cadastrar tipos de documentos
+ ┃ ┣ 📂 controle-de-processos/
+ ┃ ┃ ┗ 📜 page.tsx               # Tela principal de controle e tramitação de processos
+ ┃ ┗ 📂 login/
+ ┃ ┃ ┗ 📜 page.tsx               # Tela de login de acesso ao sistema
+ ┣ 📂 components/
+ ┃ ┣ 📂 ui/
+ ┃ ┃ ┣ 📜 button.tsx             # Componente de botão (Shadcn)
+ ┃ ┃ ┣ 📜 input.tsx              # Componente de input (Shadcn)
+ ┃ ┃ ┣ 📜 label.tsx              # Componente de label (Shadcn)
+ ┃ ┃ ┣ 📜 breadcrumb.tsx         # Componente de breadcrumb (navegação)
+ ┃ ┃ ┣ 📜 multi-select.tsx       # Componente de MultiSelect com busca (permissões)
+ ┃ ┃ ┣ 📜 modalEditarColaborador.tsx # Modal para editar colaborador
+ ┃ ┃ ┣ 📜 modalExcluirColaborador.tsx # Modal para excluir colaborador
+ ┃ ┃ ┣ 📜 modalVisualizarColaborador.tsx # Modal para visualizar dados do colaborador
+ ┃ ┃ ┗ 📜 modalAlterarSenha.tsx  # Modal para alterar senha de colaborador
+ ┣ 📂 lib/
+ ┃ ┣ 📜 prisma.ts                # Configuração do Prisma Client para acesso ao banco
+ ┃ ┣ 📜 utils.ts                 # Funções utilitárias (ex: cn() para classes Tailwind)
+ ┃ ┗ 📜 auth.ts                  # (opcional) Gerenciamento de autenticação e sessão
+ ┗ 📂 prisma/
+   ┣ 📜 schema.prisma             # Definição dos modelos do banco de dados Prisma (Colaborador, Setor, Permissão, Processo, etc.)
+   ┗ 📜 seed.ts                   # Script para inserir dados iniciais no banco (ex: permissões padrão, setores)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
