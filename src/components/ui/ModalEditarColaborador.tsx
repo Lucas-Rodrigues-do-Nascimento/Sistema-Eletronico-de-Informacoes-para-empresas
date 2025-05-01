@@ -25,7 +25,7 @@ interface Colaborador {
   telefone: string;
   cargo: string;
   setor: { id: number } | null;
-  permissoes: { id: number }[]; // ✅ Várias permissões
+  permissoes: { id: number }[];
 }
 
 interface ModalEditarColaboradorProps {
@@ -51,7 +51,7 @@ export default function ModalEditarColaborador({
   const [telefone, setTelefone] = useState('');
   const [cargo, setCargo] = useState('');
   const [setorId, setSetorId] = useState<number | ''>('');
-  const [permissoesSelecionadas, setPermissoesSelecionadas] = useState<number[]>([]); // ✅ Agora array de IDs
+  const [permissoesSelecionadas, setPermissoesSelecionadas] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
 
   function formatarCPF(value: string) {
@@ -70,16 +70,16 @@ export default function ModalEditarColaborador({
   }
 
   useEffect(() => {
-    if (colaborador) {
+    if (colaborador && open) {
       setNome(colaborador.nome);
       setEmail(colaborador.email);
       setCpf(formatarCPF(colaborador.cpf));
       setTelefone(formatarTelefone(colaborador.telefone));
       setCargo(colaborador.cargo);
       setSetorId(colaborador.setor?.id ?? '');
-      setPermissoesSelecionadas(colaborador.permissoes.map((p) => p.id)); // ✅ Pega todas permissões do colaborador
+      setPermissoesSelecionadas(colaborador.permissoes.map((p) => p.id));
     }
-  }, [colaborador]);
+  }, [colaborador, open]); // ✅ atualiza ao abrir novo colaborador
 
   async function handleSalvar() {
     setLoading(true);
@@ -95,7 +95,7 @@ export default function ModalEditarColaborador({
           telefone: telefone.replace(/\D/g, ''),
           cargo,
           setorId,
-          permissoes: permissoesSelecionadas, // ✅ Enviando array de permissões
+          permissoes: permissoesSelecionadas,
         }),
       });
 
@@ -125,7 +125,6 @@ export default function ModalEditarColaborador({
         </DialogHeader>
 
         <div className="space-y-3">
-          {/* Inputs normais */}
           <div>
             <Label>Nome</Label>
             <Input value={nome} onChange={(e) => setNome(e.target.value)} disabled={loading} />
@@ -161,7 +160,6 @@ export default function ModalEditarColaborador({
             <Input value={cargo} onChange={(e) => setCargo(e.target.value)} disabled={loading} />
           </div>
 
-          {/* Select de setor */}
           <div>
             <Label>Setor</Label>
             <select
@@ -179,7 +177,6 @@ export default function ModalEditarColaborador({
             </select>
           </div>
 
-          {/* Select múltiplo de permissões */}
           <div>
             <Label>Permissões</Label>
             <select
@@ -198,7 +195,6 @@ export default function ModalEditarColaborador({
             <small className="text-xs text-gray-500">Segure Ctrl (Windows) ou Cmd (Mac) para selecionar várias</small>
           </div>
 
-          {/* Botão de salvar */}
           <div className="pt-2">
             <Button onClick={handleSalvar} className="w-full" disabled={loading}>
               {loading ? 'Salvando...' : 'Salvar Alterações'}

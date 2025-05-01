@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -8,26 +8,47 @@ import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
 } from '@/components/ui/breadcrumb'
 
+interface Colaborador {
+  id: number
+  nome: string
+}
+
 export default function NovoProcessoPage() {
   const [tipo, setTipo] = useState('')
   const [especificacao, setEspecificacao] = useState('')
   const [interessado, setInteressado] = useState('')
   const [acesso, setAcesso] = useState('Público')
+  const [colaboradores, setColaboradores] = useState<Colaborador[]>([])
+  const [autorizados, setAutorizados] = useState<number[]>([])
 
   const router = useRouter()
+
+  useEffect(() => {
+    if (acesso !== 'Público') {
+      fetch('/api/colaboradores/listar')
+        .then((res) => res.json())
+        .then(setColaboradores)
+        .catch(() => toast.error('Erro ao carregar colaboradores'))
+    }
+  }, [acesso])
 
   async function handleSalvar() {
     try {
       const res = await fetch('/api/processos', {
         method: 'POST',
-        body: JSON.stringify({ tipo, especificacao, interessado, acesso }),
+        body: JSON.stringify({
+          tipo,
+          especificacao,
+          interessado,
+          acesso,
+          autorizados: acesso === 'Público' ? [] : autorizados,
+        }),
         headers: { 'Content-Type': 'application/json' },
       })
 
@@ -111,6 +132,29 @@ export default function NovoProcessoPage() {
               <option value="Sigiloso">Sigiloso</option>
             </select>
           </div>
+
+          {acesso !== 'Público' && (
+            <div>
+              <Label>Colaboradores com acesso</Label>
+              <select
+                multiple
+                value={autorizados.map(String)}
+                onChange={(e) =>
+                  setAutorizados(Array.from(e.target.selectedOptions).map((o) => Number(o.value)))
+                }
+                className="w-full border rounded px-3 py-2 text-sm h-40"
+              >
+                {colaboradores.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+              <small className="text-xs text-gray-500">
+                Segure Ctrl (Windows) ou Cmd (Mac) para selecionar vários
+              </small>
+            </div>
+          )}
 
           <Button onClick={handleSalvar}>Salvar</Button>
         </CardContent>

@@ -26,12 +26,15 @@ model Processo {
   criadoEm       DateTime        @default(now())
   arquivado      Boolean         @default(false)
 
-  // Setor onde o processo foi criado (origem)
   setorOrigemId  Int
   setorOrigem    Setor           @relation("SetorOrigem", fields: [setorOrigemId], references: [id])
 
+  criadorId Int?
+  criador   Colaborador? @relation("CriadorProcesso", fields: [criadorId], references: [id])
+
   documentos     Documento[]     @relation("DocumentosDoProcesso")
-  movimentacoes  Movimentacao[]  
+  movimentacoes  Movimentacao[]
+  controleAcessos ControleAcesso[]
 }
 
 model Documento {
@@ -78,8 +81,6 @@ model Setor {
   colaboradores     Colaborador[] 
   movimentacoesDe   Movimentacao[] @relation("MovimentacaoDe")
   movimentacoesPara Movimentacao[] @relation("MovimentacaoPara")
-
-  // Processos cuja origem é este setor
   processosCriados  Processo[]     @relation("SetorOrigem")
 }
 
@@ -96,17 +97,19 @@ model UnidadeLoja {
 }
 
 model Colaborador {
-  id          Int         @id @default(autoincrement())
-  nome        String
-  email       String      @unique
-  cpf         String
-  telefone    String
-  cargo       String
-  senha       String
-  ativo       Boolean     @default(true)
-  setor       Setor?      @relation(fields: [setorId], references: [id])
-  setorId     Int?
-  permissoes  Permissao[] @relation("ColaboradorPermissoes")
+  id               Int          @id @default(autoincrement())
+  nome             String
+  email            String       @unique
+  cpf              String
+  telefone         String
+  cargo            String
+  senha            String
+  ativo            Boolean      @default(true)
+  setor            Setor?       @relation(fields: [setorId], references: [id])
+  setorId          Int?
+  permissoes       Permissao[]  @relation("ColaboradorPermissoes")
+  controleAcessos  ControleAcesso[]
+  processosCriados Processo[]   @relation("CriadorProcesso")
 }
 
 model TipoDocumento {
@@ -143,5 +146,15 @@ model Permissao {
   codigo        String        @unique
   descricao     String?
   criadoEm      DateTime      @default(now())
-    colaboradores Colaborador[] @relation("ColaboradorPermissoes") // <- adicionado explicitamente aqui
+  colaboradores Colaborador[] @relation("ColaboradorPermissoes")
+}
+
+model ControleAcesso {
+  id            Int         @id @default(autoincrement())
+  processoId    Int
+  colaboradorId Int
+  criadoEm      DateTime    @default(now())
+
+  processo      Processo    @relation(fields: [processoId], references: [id])
+  colaborador   Colaborador @relation(fields: [colaboradorId], references: [id])
 }

@@ -24,7 +24,7 @@ interface Colaborador {
   cargo: string;
   ativo: boolean;
   setor: Setor | null;
-  permissoes: Permissao[]; // ✅ Agora é array
+  permissoes: Permissao[];
 }
 
 interface ModalVisualizarColaboradorProps {
@@ -56,14 +56,18 @@ export default function ModalVisualizarColaborador({
   }
 
   useEffect(() => {
-    if (open && !avisado) {
-      if (!colaborador.setor) {
-        toast.warning(`⚠️ O colaborador ${colaborador.nome} não possui setor vinculado.`);
+    if (open) {
+      if (!avisado) {
+        if (!colaborador.setor) {
+          toast.warning(`⚠️ ${colaborador.nome} não possui setor vinculado.`);
+        }
+        if (!colaborador.permissoes || colaborador.permissoes.length === 0) {
+          toast.warning(`⚠️ ${colaborador.nome} não possui permissão atribuída.`);
+        }
+        setAvisado(true);
       }
-      if (!colaborador.permissoes || colaborador.permissoes.length === 0) {
-        toast.warning(`⚠️ O colaborador ${colaborador.nome} não possui permissão atribuída.`);
-      }
-      setAvisado(true);
+    } else {
+      setAvisado(false); // ✅ reset ao fechar
     }
   }, [open, colaborador, avisado]);
 
@@ -81,10 +85,10 @@ export default function ModalVisualizarColaborador({
           <p><strong>Telefone:</strong> {formatarTelefone(colaborador.telefone)}</p>
           <p><strong>Cargo:</strong> {colaborador.cargo}</p>
           <p><strong>Status:</strong> {colaborador.ativo ? '✅ Ativo' : '🚫 Inativo'}</p>
-          <p><strong>Setor:</strong> {colaborador.setor ? colaborador.setor.nome : 'Não vinculado'}</p>
+          <p><strong>Setor:</strong> {colaborador.setor?.nome ?? 'Não vinculado'}</p>
           <p>
             <strong>Permissões:</strong>{' '}
-            {colaborador.permissoes && colaborador.permissoes.length > 0
+            {colaborador.permissoes?.length
               ? colaborador.permissoes.map((p) => p.nome).join(', ')
               : 'Não atribuída'}
           </p>

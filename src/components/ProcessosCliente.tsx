@@ -1,4 +1,4 @@
-// ProcessosCliente.tsx
+// src/components/ProcessosCliente.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -76,14 +76,20 @@ export default function ProcessosCliente({ processoId }: Props) {
         fetch(`/api/processos/${id}/documentos`),
         fetch(`/api/processos/${id}/historico`)
       ])
+
+      if (pRes.status === 403) {
+        throw new Error('Você não tem permissão para acessar este processo.')
+      }
       if (!pRes.ok) throw new Error('Falha ao carregar processo')
       if (!dRes.ok) throw new Error('Falha ao carregar documentos')
       if (!hRes.ok) throw new Error('Falha ao carregar histórico')
+
       const novoProcesso = await pRes.json()
       const novosDocumentos = await dRes.json()
       setProcesso(novoProcesso)
       setDocumentos(novosDocumentos)
       setHistorico(await hRes.json())
+
       if (docIdParaSelecionar) {
         const novoDoc = novosDocumentos.find((d: Documento) => d.id === docIdParaSelecionar)
         if (novoDoc) setSelected(novoDoc)
@@ -99,9 +105,7 @@ export default function ProcessosCliente({ processoId }: Props) {
   async function excluirDocumento(docId: number) {
     if (!confirm('Tem certeza que deseja excluir este documento?')) return
     try {
-      const res = await fetch(`/api/processos/${id}/documentos/${docId}`, {
-        method: 'DELETE'
-      })
+      const res = await fetch(`/api/processos/${id}/documentos/${docId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Erro ao excluir documento')
       setSelected(null)
       carregarDados()
@@ -165,33 +169,21 @@ export default function ProcessosCliente({ processoId }: Props) {
           <div className="flex gap-2">
             {isInterno && (
               <>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    window.open(
-                      `/controle-de-processos/${id}/editar-documento/${selected?.id}`,
-                      '_blank',
-                      'popup=yes,width=1000,height=800,scrollbars=yes,noopener'
-                    )
-                  }}
-                >
+                <Button size="sm" variant="secondary" onClick={() => {
+                  window.open(
+                    `/controle-de-processos/${id}/editar-documento/${selected?.id}`,
+                    '_blank',
+                    'popup=yes,width=1000,height=800,scrollbars=yes,noopener'
+                  )
+                }}>
                   <Pencil className="w-4 h-4 mr-1" /> Editar
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowAssinaturaModal(true)}
-                >
+                <Button size="sm" variant="outline" onClick={() => setShowAssinaturaModal(true)}>
                   🔐 Assinar
                 </Button>
               </>
             )}
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => excluirDocumento(selected!.id)}
-            >
+            <Button size="sm" variant="destructive" onClick={() => excluirDocumento(selected!.id)}>
               <Trash className="w-4 h-4 mr-1" /> Excluir
             </Button>
           </div>
@@ -223,10 +215,7 @@ export default function ProcessosCliente({ processoId }: Props) {
   return (
     <div className="flex h-screen">
       <aside className={`w-1/4 border-r bg-white p-4 overflow-auto transition-all duration-300 ${selected ? 'shadow-lg backdrop-blur-sm bg-white/80' : ''}`}>
-        <button
-          onClick={() => setSelected(null)}
-          className="w-full text-left font-bold text-lg mb-4 hover:underline shadow-sm"
-        >
+        <button onClick={() => setSelected(null)} className="w-full text-left font-bold text-lg mb-4 hover:underline shadow-sm">
           <span className="drop-shadow-md">Processo #{processo.id}</span>
         </button>
         <ul className="space-y-2">
@@ -255,9 +244,10 @@ export default function ProcessosCliente({ processoId }: Props) {
       </aside>
 
       <div className="flex flex-col flex-1 p-6 overflow-auto">
+        {/* Botões */}
         <div className="flex flex-wrap gap-2 mb-4">
           <Button variant="ghost" onClick={() => router.push('/controle-de-processos')}>
-            <CornerDownLeft className="w-4 h-4" /> Voltar para controle de processos
+            <CornerDownLeft className="w-4 h-4" /> Voltar
           </Button>
 
           <DropdownMenu>
@@ -324,11 +314,11 @@ export default function ProcessosCliente({ processoId }: Props) {
           </Button>
           {processo.arquivado && (
             <Button variant="outline" onClick={reabrirProcesso}>
-              <LockOpen className="w-4 h-4" /> Reabrir Processo
+              <LockOpen className="w-4 h-4" /> Reabrir
             </Button>
           )}
           <Button variant="outline" onClick={() => setShowHistoricoModal(true)}>
-            <Clock4 className="w-4 h-4" /> Histórico completo
+            <Clock4 className="w-4 h-4" /> Histórico
           </Button>
         </div>
 

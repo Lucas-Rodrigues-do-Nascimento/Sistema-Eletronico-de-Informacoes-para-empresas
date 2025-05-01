@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma'
 import JSZip from 'jszip'
 import path from 'path'
 import fs from 'fs/promises'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { possuiPermissao } from '@/lib/permissoes' // ✅ importado o helper
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +17,30 @@ export async function GET(
 
   if (isNaN(processoId)) {
     return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
+  }
+
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.id
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Usuário não autenticado' }, { status: 401 })
+  }
+
+  const colaborador = await prisma.colaborador.findUnique({
+    where: { id: parseInt(userId) },
+    include: { permissoes: true },
+  })
+
+  if (!colaborador) {
+    return NextResponse.json({ error: 'Colaborador não encontrado' }, { status: 404 })
+  }
+
+  // ✅ Verifica permissão de exportar documentos
+  if (!possuiPermissao(colaborador, 'exportar_documentos')) {
+    return NextResponse.json(
+      { error: 'Você não tem permissão para exportar documentos.' },
+      { status: 403 }
+    )
   }
 
   try {

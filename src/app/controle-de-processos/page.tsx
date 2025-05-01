@@ -1,3 +1,5 @@
+// src/app/controle-de-processos/page.tsx
+
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
@@ -17,7 +19,7 @@ import {
   Settings,
   Folder,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -49,9 +51,15 @@ export default async function ControleDeProcessosPage() {
     redirect("/login?callbackUrl=/controle-de-processos");
   }
 
+  console.log("Sessão carregada:", session); // ✅ debug para ver se setor vem corretamente
+
   const setorSelecionadoId = Number(session.user.setor);
   if (isNaN(setorSelecionadoId)) {
-    return <div className="p-4 text-red-600">Setor inválido. Faça login novamente.</div>;
+    return (
+      <div className="p-4 text-red-600">
+        Setor inválido ou não definido. Faça login novamente.
+      </div>
+    );
   }
 
   const todosProcessos = await prisma.processo.findMany({

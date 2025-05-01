@@ -1,27 +1,27 @@
-import { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import prisma from "./prisma"
-import { compare } from "bcryptjs"
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import prisma from "./prisma";
+import { compare } from "bcryptjs";
 
 /* Tipos extras para autocomplete */
 declare module "next-auth" {
   interface Session {
     user: {
-      id: string
-      name: string
-      email: string
-      setor?: number | null
-      permissao?: string | null
-    }
+      id: string;
+      name: string;
+      email: string;
+      setor?: number | null;
+      permissao?: string | null;
+    };
   }
 }
 declare module "next-auth/jwt" {
   interface JWT {
-    id?: string
-    name?: string
-    email?: string
-    setor?: number | null
-    permissao?: string | null
+    id?: string;
+    name?: string;
+    email?: string;
+    setor?: number | null;
+    permissao?: string | null;
   }
 }
 
@@ -34,25 +34,28 @@ export const authOptions: NextAuthOptions = {
         senha: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.senha) return null
+        if (!credentials?.email || !credentials?.senha) return null;
 
         const user = await prisma.colaborador.findUnique({
           where: { email: credentials.email },
-          include: { permissao: true },
-        })
+          include: {
+            permissoes: true,
+            setor: true, // ✅ adiciona o setor para garantir que setorId venha corretamente
+          },
+        });
 
-        if (!user || !user.senha) return null
+        if (!user || !user.senha) return null;
 
-        const valid = await compare(credentials.senha, user.senha)
-        if (!valid) return null
+        const valid = await compare(credentials.senha, user.senha);
+        if (!valid) return null;
 
         return {
           id: user.id.toString(),
           name: user.nome,
           email: user.email,
           setor: user.setorId ?? null,
-          permissao: user.permissao?.codigo ?? null,
-        }
+          permissao: user.permissoes?.[0]?.codigo ?? null,
+        };
       },
     }),
   ],
@@ -69,22 +72,28 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       // Primeira autenticação
       if (user) {
-        token.id = user.id
-        token.name = user.name ?? undefined
-        token.email = user.email ?? undefined
-        token.setor = (user as any).setor ?? (user as any).setorId ?? null
-        token.permissao = (user as any).permissao ?? null
+        token.id = user.id;
+        token.name = user.name ?? undefined;
+        token.email = user.email ?? undefined;
+        token.setor = (user as any).setor ?? (user as any).setorId ?? null;
+        token.permissao = (user as any).permissao ?? null;
       }
 
       // Atualização manual da sessão (ex: troca de setor)
       if (trigger === "update") {
         const colaborador = await prisma.colaborador.findUnique({
           where: { id: parseInt(token.id as string) },
-        })
-        token.setor = colaborador?.setorId ?? null
+          include: {
+            permissoes: true,
+            setor: true,
+          },
+        });
+
+        token.setor = colaborador?.setorId ?? null;
+        token.permissao = colaborador?.permissoes?.[0]?.codigo ?? null;
       }
 
-      return token
+      return token;
     },
 
     async session({ session, token }) {
@@ -94,8 +103,8 @@ export const authOptions: NextAuthOptions = {
         email: token.email as string,
         setor: token.setor as number | null,
         permissao: token.permissao as string | null,
-      }
-      return session
+      };
+      return session;
     },
   },
-}
+};

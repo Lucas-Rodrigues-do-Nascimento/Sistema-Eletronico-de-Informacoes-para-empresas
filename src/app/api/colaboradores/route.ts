@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 /* ─────────────── POST → Criar novo colaborador ─────────────── */
 export async function POST(req: Request) {
   try {
-    const { nome, email, senha, cpf, telefone, cargo, setorId, permissaoId } = await req.json();
+    const { nome, email, senha, cpf, telefone, cargo, setorId, permissoes } = await req.json(); // <-- permissoes (array)
 
-    if (!nome || !email || !senha || !cpf || !setorId || !permissaoId) {
+    if (!nome || !email || !senha || !cpf || !setorId || !permissoes || !Array.isArray(permissoes)) {
       return NextResponse.json(
         { error: 'Todos os campos obrigatórios devem ser preenchidos.' },
         { status: 400 }
@@ -25,10 +25,14 @@ export async function POST(req: Request) {
         cpf,
         telefone,
         cargo,
-        setorId: Number(setorId),
-        permissaoId: Number(permissaoId),
         senha: senhaCriptografada,
         ativo: true,
+        setor: {
+          connect: { id: Number(setorId) },
+        },
+        permissoes: {
+          connect: permissoes.map((id: number) => ({ id })), // <-- conecta múltiplas permissões
+        },
       },
     });
 
@@ -45,7 +49,7 @@ export async function GET() {
     const colaboradores = await prisma.colaborador.findMany({
       include: {
         setor: { select: { id: true, nome: true } },
-        permissao: { select: { id: true, nome: true, codigo: true } },
+        permissoes: { select: { id: true, nome: true, codigo: true } }, // <-- permissoes (plural)
       },
       orderBy: { nome: 'asc' },
     });

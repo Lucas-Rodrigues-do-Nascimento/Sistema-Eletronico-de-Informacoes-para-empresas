@@ -9,7 +9,7 @@ interface ModalExcluirColaboradorProps {
   open: boolean
   onClose: () => void
   colaboradorId: number
-  colaboradorNome: string
+  colaboradorNome?: string // ✅ agora opcional
   onExcluido: () => void
 }
 
@@ -57,7 +57,7 @@ export default function ModalExcluirColaborador({
 
         <div className="space-y-4">
           <p className="text-sm">
-            Tem certeza que deseja excluir o colaborador <strong>{colaboradorNome}</strong>?<br />
+            Tem certeza que deseja excluir o colaborador <strong>{colaboradorNome ?? 'selecionado'}</strong>?<br />
             Essa ação não poderá ser desfeita.
           </p>
 

@@ -1,4 +1,5 @@
 // src/lib/utils.ts
+
 // -----------------------------------------------------------------------------
 // helpers de Tailwind
 import { clsx, type ClassValue } from "clsx";
@@ -7,6 +8,7 @@ import { twMerge } from "tailwind-merge";
 // Tipagens Prisma
 import type { Processo, Documento, Movimentacao } from "@prisma/client";
 
+// Helper de classes CSS
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -38,32 +40,31 @@ export function separarProcessosPorSetor(
   for (const proc of processos) {
     const movs = proc.movimentacoes ?? [];
 
-    // 1) SEM movimentações → considera gerado no setor atual
     if (movs.length === 0) {
+      // Sem movimentações: considera como gerado pelo setor atual
       processosGerados.push(proc);
       continue;
     }
 
-    // 2) COM movimentações
     const primeira = movs[0];
     const ultima = movs[movs.length - 1];
 
-    // Foi criado aqui se a 1ª mov. tem DE = PARA = setorId
-    const foiGeradoAqui =
-      primeira.deSetor === setorId && primeira.paraSetor === setorId;
+    // Verifica se o processo foi gerado pelo setor atual
+    const foiGeradoAqui = primeira.deSetor === setorId;
 
-    // Continua no setor de origem?
-    const continuaNoOrigem =
+    // Verifica se o processo está ativo no setor atual
+    const estaAtivoAqui =
+      ultima.ativo && ultima.paraSetor === setorId;
+
+    // Verifica se o processo permanece aberto no setor de origem
+    const manterNoOrigem =
       ultima.manterAbertoNoSetorOrigem && ultima.deSetor === setorId;
 
-    // Está ativo (presente) no setor destino?
-    const estaNoDestino = ultima.paraSetor === setorId && ultima.ativo;
-
-    if (foiGeradoAqui || continuaNoOrigem) {
+    // Adiciona à lista de gerados se foi gerado aqui ou permanece no setor de origem
+    if (foiGeradoAqui || manterNoOrigem) {
       processosGerados.push(proc);
-    }
-
-    if (estaNoDestino) {
+    } else if (estaAtivoAqui) {
+      // Caso contrário, se está ativo aqui, adiciona à lista de recebidos
       processosRecebidos.push(proc);
     }
   }

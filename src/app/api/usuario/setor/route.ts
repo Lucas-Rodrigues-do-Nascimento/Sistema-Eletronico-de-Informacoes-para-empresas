@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { possuiPermissao } from '@/lib/permissoes' // ✅ Importando o helper
 
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions)
@@ -14,9 +15,30 @@ export async function PATCH(req: Request) {
     )
   }
 
+  // 🔐 Buscar colaborador com permissões
+  const colaborador = await prisma.colaborador.findUnique({
+    where: { id: parseInt(session.user.id) },
+    include: { permissoes: true },
+  })
+
+  if (!colaborador) {
+    return NextResponse.json(
+      { error: 'Colaborador não encontrado.' },
+      { status: 404 }
+    )
+  }
+
+  // ✅ Verifica permissão com helper
+  if (!possuiPermissao(colaborador, 'mudar_setor')) {
+    return NextResponse.json(
+      { error: 'Você não tem permissão para mudar de setor.' },
+      { status: 403 }
+    )
+  }
+
   try {
     const atualizado = await prisma.colaborador.update({
-      where: { id: parseInt(session.user.id) },
+      where: { id: colaborador.id },
       data: { setorId: setor },
     })
 

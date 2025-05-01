@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { possuiPermissao } from '@/lib/permissoes' // ✅ Importado
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
@@ -32,10 +33,19 @@ export async function POST(
 
   const colaborador = await prisma.colaborador.findUnique({
     where: { email: user.email },
+    include: { permissoes: true }, // 👈 necessário para validar permissões
   })
 
   if (!colaborador || !colaborador.senha) {
     return NextResponse.json({ error: 'Colaborador não encontrado ou sem senha' }, { status: 404 })
+  }
+
+  // ✅ Verifica permissão com helper
+  if (!possuiPermissao(colaborador, 'assinatura')) {
+    return NextResponse.json(
+      { error: 'Você não tem permissão para assinar documentos.' },
+      { status: 403 }
+    )
   }
 
   const senhaCorreta = await bcrypt.compare(senhaDigitada, colaborador.senha)

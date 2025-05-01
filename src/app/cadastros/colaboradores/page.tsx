@@ -36,7 +36,7 @@ interface Colaborador {
   cargo: string;
   ativo: boolean;
   setor: Setor | null;
-  permissao: Permissao | null;
+  permissoes: Permissao[];
 }
 
 export default function CadastroColaboradoresPage() {
@@ -47,7 +47,7 @@ export default function CadastroColaboradoresPage() {
   const [telefone, setTelefone] = useState('');
   const [cargo, setCargo] = useState('');
   const [setorId, setSetorId] = useState<number | ''>('');
-  const [permissaoId, setPermissaoId] = useState<number | ''>('');
+  const [permissoesSelecionadas, setPermissoesSelecionadas] = useState<number[]>([]);
 
   const [setores, setSetores] = useState<Setor[]>([]);
   const [permissoes, setPermissoes] = useState<Permissao[]>([]);
@@ -60,16 +60,14 @@ export default function CadastroColaboradoresPage() {
   const [modalVisualizarAberto, setModalVisualizarAberto] = useState(false);
 
   function formatarCPF(value: string) {
-    return value
-      .replace(/\D/g, '')
+    return value.replace(/\D/g, '')
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   }
 
   function formatarTelefone(value: string) {
-    return value
-      .replace(/\D/g, '')
+    return value.replace(/\D/g, '')
       .replace(/(\d{2})(\d)/, '($1) $2')
       .replace(/(\d{5})(\d{4})$/, '$1-$2');
   }
@@ -99,7 +97,7 @@ export default function CadastroColaboradoresPage() {
           telefone: telefone.replace(/\D/g, ''),
           cargo,
           setorId,
-          permissaoId,
+          permissoes: permissoesSelecionadas,
         }),
       });
 
@@ -112,7 +110,7 @@ export default function CadastroColaboradoresPage() {
       setTelefone('');
       setCargo('');
       setSetorId('');
-      setPermissaoId('');
+      setPermissoesSelecionadas([]);
 
       toast.success('✅ Colaborador cadastrado com sucesso!');
       fetchDados();
@@ -120,6 +118,11 @@ export default function CadastroColaboradoresPage() {
       console.error(err);
       toast.error('❌ Erro ao cadastrar colaborador');
     }
+  }
+
+  function handlePermissoesChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const selectedOptions = Array.from(e.target.selectedOptions).map((option) => Number(option.value));
+    setPermissoesSelecionadas(selectedOptions);
   }
 
   async function handleInativar(id: number) {
@@ -167,9 +170,10 @@ export default function CadastroColaboradoresPage() {
             <div><Label>Nome</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} /></div>
             <div><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
             <div><Label>Senha</Label><Input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} /></div>
-            <div><Label>CPF</Label><Input value={cpf} onChange={(e) => setCpf(formatarCPF(e.target.value))} placeholder="000.000.000-00" /></div>
-            <div><Label>Telefone</Label><Input value={telefone} onChange={(e) => setTelefone(formatarTelefone(e.target.value))} placeholder="(00) 00000-0000" /></div>
+            <div><Label>CPF</Label><Input value={cpf} onChange={(e) => setCpf(formatarCPF(e.target.value))} /></div>
+            <div><Label>Telefone</Label><Input value={telefone} onChange={(e) => setTelefone(formatarTelefone(e.target.value))} /></div>
             <div><Label>Cargo</Label><Input value={cargo} onChange={(e) => setCargo(e.target.value)} /></div>
+
             <div>
               <Label>Setor</Label>
               <select
@@ -183,18 +187,20 @@ export default function CadastroColaboradoresPage() {
                 ))}
               </select>
             </div>
+
             <div>
-              <Label>Permissão</Label>
+              <Label>Permissões</Label>
               <select
-                value={permissaoId}
-                onChange={(e) => setPermissaoId(Number(e.target.value))}
+                multiple
+                value={permissoesSelecionadas.map(String)}
+                onChange={handlePermissoesChange}
                 className="w-full border rounded px-3 py-2 text-sm"
               >
-                <option value="">Selecione a permissão</option>
                 {permissoes.map((p) => (
                   <option key={p.id} value={p.id}>{p.nome}</option>
                 ))}
               </select>
+              <small className="text-xs text-gray-500">Segure Ctrl ou Cmd para múltiplas</small>
             </div>
           </div>
 
@@ -202,66 +208,94 @@ export default function CadastroColaboradoresPage() {
         </CardContent>
       </Card>
 
-      {/* Listagem de Colaboradores */}
-      <div className="mt-10">
-        {setores.map((setor) => {
-          const colaboradoresDoSetor = colaboradores.filter((c) => c.setor?.id === setor.id);
-          if (colaboradoresDoSetor.length === 0) return null;
+      {setores.map((setor) => {
+        const colaboradoresDoSetor = colaboradores.filter((c) => c.setor?.id === setor.id);
+        if (colaboradoresDoSetor.length === 0) return null;
 
-          return (
-            <div key={setor.id} className="mb-8">
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">👥 {setor.nome}</h2>
-              <div className="space-y-2">
-                {colaboradoresDoSetor.map((colab) => (
-                  <div key={colab.id} className="bg-white p-4 rounded-xl border flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold">{colab.nome}</p>
-                      <p className="text-sm text-gray-500">{colab.email} · CPF: {formatarCPF(colab.cpf)}</p>
-                      <p className="text-sm text-gray-400">{colab.cargo} · <span className={colab.ativo ? 'text-green-600' : 'text-red-600'}>{colab.ativo ? 'Ativo' : 'Inativo'}</span></p>
+        return (
+          <div key={setor.id} className="mt-8">
+            <h2 className="text-lg font-semibold mb-4">{setor.nome}</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {colaboradoresDoSetor.map((colab) => (
+                <Card key={colab.id}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="font-bold">{colab.nome}</div>
+                    <div className="text-sm text-gray-600">{colab.email}</div>
+                    <div className="text-sm">Cargo: {colab.cargo}</div>
+                    <div className="text-sm">CPF: {formatarCPF(colab.cpf)}</div>
+                    <div className="text-sm">Telefone: {formatarTelefone(colab.telefone)}</div>
+                    <div className="text-sm">Status: {colab.ativo ? 'Ativo' : 'Inativo'}</div>
+
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setColaboradorSelecionado(colab);
+                        setModalEditarAberto(true);
+                      }}>
+                        Editar
+                      </Button>
+
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setColaboradorSelecionado(colab);
+                        setModalSenhaAberto(true);
+                      }}>
+                        Alterar Senha
+                      </Button>
+
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setColaboradorSelecionado(colab);
+                        setModalVisualizarAberto(true);
+                      }}>
+                        Visualizar
+                      </Button>
+
+                      <Button size="sm" variant="destructive" onClick={() => {
+                        setColaboradorSelecionado(colab);
+                        setModalExcluirAberto(true);
+                      }}>
+                        Excluir
+                      </Button>
+
+                      <Button size="sm" variant="secondary" onClick={() => handleInativar(colab.id)}>
+                        {colab.ativo ? 'Inativar' : 'Ativar'}
+                      </Button>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => { setColaboradorSelecionado(colab); setModalVisualizarAberto(true); }}>👁️ Visualizar</Button>
-                      <Button size="sm" variant="outline" onClick={() => { setColaboradorSelecionado(colab); setModalEditarAberto(true); }}>✏️ Editar</Button>
-                      <Button size="sm" variant={colab.ativo ? 'destructive' : 'default'} onClick={() => handleInativar(colab.id)}>{colab.ativo ? 'Inativar' : 'Ativar'}</Button>
-                      <Button size="sm" variant="destructive" onClick={() => { setColaboradorSelecionado(colab); setModalExcluirAberto(true); }}>🗑️ Excluir</Button>
-                      <Button size="sm" onClick={() => { setColaboradorSelecionado(colab); setModalSenhaAberto(true); }}>🔑 Senha</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
 
-      {/* Modais */}
       {colaboradorSelecionado && (
         <>
           <ModalEditarColaborador
-            open={modalEditarAberto}
-            onClose={() => setModalEditarAberto(false)}
             colaborador={colaboradorSelecionado}
+            open={modalEditarAberto}
             setores={setores}
             permissoes={permissoes}
-            onAtualizado={fetchDados}
+            onClose={() => setModalEditarAberto(false)}
+            onAtualizado={() => fetchDados()}
           />
+
           <ModalExcluirColaborador
-            open={modalExcluirAberto}
-            onClose={() => setModalExcluirAberto(false)}
             colaboradorId={colaboradorSelecionado.id}
             colaboradorNome={colaboradorSelecionado.nome}
-            onExcluido={fetchDados}
+            open={modalExcluirAberto}
+            onClose={() => setModalExcluirAberto(false)}
+            onExcluido={() => fetchDados()}
           />
+
           <ModalAlterarSenha
+            colaboradorId={colaboradorSelecionado.id}
             open={modalSenhaAberto}
             onClose={() => setModalSenhaAberto(false)}
-            colaboradorId={colaboradorSelecionado.id}
-            onAtualizado={fetchDados}
           />
+
           <ModalVisualizarColaborador
+            colaborador={colaboradorSelecionado}
             open={modalVisualizarAberto}
             onClose={() => setModalVisualizarAberto(false)}
-            colaborador={colaboradorSelecionado}
           />
         </>
       )}

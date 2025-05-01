@@ -11,7 +11,7 @@ interface ModalAlterarSenhaProps {
   open: boolean
   onClose: () => void
   colaboradorId: number
-  onAtualizado: () => void
+  onAtualizado?: () => void // ✅ agora é opcional
 }
 
 export default function ModalAlterarSenha({
@@ -54,7 +54,7 @@ export default function ModalAlterarSenha({
       toast.success('✅ Senha alterada com sucesso!')
       setNovaSenha('')
       setConfirmacao('')
-      onAtualizado()
+      onAtualizado?.() // ✅ só chama se existir
       onClose()
     } catch (err) {
       console.error(err)
