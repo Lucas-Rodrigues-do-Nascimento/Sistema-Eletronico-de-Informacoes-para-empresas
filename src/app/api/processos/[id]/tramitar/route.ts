@@ -1,3 +1,4 @@
+// src/app/api/processos/[id]/tramitar/route.ts
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import prisma from '@/lib/prisma'
@@ -46,29 +47,32 @@ export async function POST(
   }
 
   try {
-    // Desativa movimentações ativas no setor atual, se não for manter aberto
-    if (!manterAbertoNoSetorOrigem) {
-      await prisma.movimentacao.updateMany({
-        where: {
-          processoId,
-          paraSetor: Number(setorAtual),
-          ativo: true,
-        },
-        data: { ativo: false },
-      })
-    }
-
-    // Desativa movimentações ativas no setor de destino
+    // 1. Desativa todas as movimentações ativas do processo
     await prisma.movimentacao.updateMany({
       where: {
         processoId,
-        paraSetor: Number(paraSetorId),
         ativo: true,
       },
-      data: { ativo: false },
+      data: {
+        ativo: false,
+      },
     })
 
-    // Cria nova movimentação
+    // 2. Se marcado, cria nova movimentação para manter no setor de origem
+    if (manterAbertoNoSetorOrigem) {
+      await prisma.movimentacao.create({
+        data: {
+          processoId,
+          deSetor: Number(setorAtual),
+          paraSetor: Number(setorAtual),
+          observacoes: 'Mantido no setor de origem',
+          manterAbertoNoSetorOrigem: true,
+          ativo: true,
+        },
+      })
+    }
+
+    // 3. Cria nova movimentação principal para o setor de destino
     await prisma.movimentacao.create({
       data: {
         processoId,

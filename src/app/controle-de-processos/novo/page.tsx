@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -25,7 +25,10 @@ export default function NovoProcessoPage() {
   const [interessado, setInteressado] = useState('')
   const [acesso, setAcesso] = useState('Público')
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([])
-  const [autorizados, setAutorizados] = useState<number[]>([])
+  const [busca, setBusca] = useState('')
+  const [autorizados, setAutorizados] = useState<Colaborador[]>([])
+  const [focoIndex, setFocoIndex] = useState<number>(-1)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
 
@@ -38,6 +41,36 @@ export default function NovoProcessoPage() {
     }
   }, [acesso])
 
+  const resultadosBusca = colaboradores.filter(
+    (c) =>
+      c.nome.toLowerCase().includes(busca.toLowerCase()) &&
+      !autorizados.some((a) => a.id === c.id)
+  )
+
+  function adicionarColaborador(c: Colaborador) {
+    setAutorizados([...autorizados, c])
+    setBusca('')
+    setFocoIndex(-1)
+    inputRef.current?.focus()
+  }
+
+  function removerColaborador(id: number) {
+    setAutorizados(autorizados.filter((c) => c.id !== id))
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setFocoIndex((prev) => (prev + 1) % resultadosBusca.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setFocoIndex((prev) => (prev - 1 + resultadosBusca.length) % resultadosBusca.length)
+    } else if (e.key === 'Enter' && focoIndex >= 0) {
+      e.preventDefault()
+      adicionarColaborador(resultadosBusca[focoIndex])
+    }
+  }
+
   async function handleSalvar() {
     try {
       const res = await fetch('/api/processos', {
@@ -47,7 +80,7 @@ export default function NovoProcessoPage() {
           especificacao,
           interessado,
           acesso,
-          autorizados: acesso === 'Público' ? [] : autorizados,
+          autorizados: acesso === 'Público' ? [] : autorizados.map((c) => c.id),
         }),
         headers: { 'Content-Type': 'application/json' },
       })
@@ -55,9 +88,8 @@ export default function NovoProcessoPage() {
       if (!res.ok) throw new Error('Erro ao criar processo')
 
       const processoCriado = await res.json()
-
       toast.success('Processo criado com sucesso!')
-      router.push(`/controle-de-processos/${processoCriado.id}`)
+      await router.push(`/controle-de-processos/${processoCriado.id}`)
     } catch (err) {
       console.error(err)
       toast.error('Erro ao criar processo')
@@ -134,25 +166,47 @@ export default function NovoProcessoPage() {
           </div>
 
           {acesso !== 'Público' && (
-            <div>
-              <Label>Colaboradores com acesso</Label>
-              <select
-                multiple
-                value={autorizados.map(String)}
-                onChange={(e) =>
-                  setAutorizados(Array.from(e.target.selectedOptions).map((o) => Number(o.value)))
-                }
-                className="w-full border rounded px-3 py-2 text-sm h-40"
-              >
-                {colaboradores.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-              <small className="text-xs text-gray-500">
-                Segure Ctrl (Windows) ou Cmd (Mac) para selecionar vários
-              </small>
+            <div className="space-y-2">
+              <Label>Adicionar Colaboradores Autorizados</Label>
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="Digite um nome..."
+                value={busca}
+                onChange={(e) => {
+                  setBusca(e.target.value)
+                  setFocoIndex(-1)
+                }}
+                onKeyDown={handleKeyDown}
+              />
+              {busca.length > 0 && resultadosBusca.length > 0 && (
+                <ul className="border rounded bg-white max-h-48 overflow-y-auto text-sm shadow">
+                  {resultadosBusca.map((c, idx) => (
+                    <li
+                      key={c.id}
+                      className={`px-3 py-1 cursor-pointer hover:bg-gray-100 ${focoIndex === idx ? 'bg-gray-200' : ''}`}
+                      onClick={() => adicionarColaborador(c)}
+                    >
+                      {c.nome}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {autorizados.length > 0 && (
+                <ul className="mt-2 space-y-1 text-sm">
+                  {autorizados.map((c) => (
+                    <li key={c.id} className="flex justify-between items-center px-3 py-1 bg-gray-100 rounded">
+                      {c.nome}
+                      <button
+                        onClick={() => removerColaborador(c.id)}
+                        className="text-red-500 hover:underline text-xs"
+                      >
+                        remover
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 

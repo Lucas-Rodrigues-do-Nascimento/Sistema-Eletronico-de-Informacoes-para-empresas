@@ -11,17 +11,20 @@ declare module "next-auth" {
       name: string;
       email: string;
       setor?: number | null;
-      permissao?: string | null;
+      setorNome?: string | null;
+      permissoes: string[];
     };
   }
 }
+
 declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
     name?: string;
     email?: string;
     setor?: number | null;
-    permissao?: string | null;
+    setorNome?: string | null;
+    permissoes: string[];
   }
 }
 
@@ -40,7 +43,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
           include: {
             permissoes: true,
-            setor: true, // ✅ adiciona o setor para garantir que setorId venha corretamente
+            setor: true,
           },
         });
 
@@ -54,7 +57,8 @@ export const authOptions: NextAuthOptions = {
           name: user.nome,
           email: user.email,
           setor: user.setorId ?? null,
-          permissao: user.permissoes?.[0]?.codigo ?? null,
+          setorNome: user.setor?.nome ?? null,
+          permissoes: user.permissoes.map((p) => p.codigo),
         };
       },
     }),
@@ -70,16 +74,16 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, trigger }) {
-      // Primeira autenticação
       if (user) {
         token.id = user.id;
         token.name = user.name ?? undefined;
         token.email = user.email ?? undefined;
-        token.setor = (user as any).setor ?? (user as any).setorId ?? null;
-        token.permissao = (user as any).permissao ?? null;
+        token.setor = (user as any).setor ?? null;
+        token.setorNome = (user as any).setorNome ?? null;
+        token.permissoes = (user as any).permissoes ?? [];
+        console.log("🔐 Permissões inseridas no token:", token.permissoes);
       }
 
-      // Atualização manual da sessão (ex: troca de setor)
       if (trigger === "update") {
         const colaborador = await prisma.colaborador.findUnique({
           where: { id: parseInt(token.id as string) },
@@ -90,7 +94,9 @@ export const authOptions: NextAuthOptions = {
         });
 
         token.setor = colaborador?.setorId ?? null;
-        token.permissao = colaborador?.permissoes?.[0]?.codigo ?? null;
+        token.setorNome = colaborador?.setor?.nome ?? null;
+        token.permissoes = colaborador?.permissoes.map((p) => p.codigo) ?? [];
+        console.log("🔄 Permissões atualizadas no token:", token.permissoes);
       }
 
       return token;
@@ -102,8 +108,10 @@ export const authOptions: NextAuthOptions = {
         name: token.name as string,
         email: token.email as string,
         setor: token.setor as number | null,
-        permissao: token.permissao as string | null,
+        setorNome: token.setorNome as string | null,
+        permissoes: token.permissoes as string[],
       };
+      console.log("📦 Sessão criada com permissões:", session.user.permissoes);
       return session;
     },
   },

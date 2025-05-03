@@ -1,4 +1,3 @@
-// src/components/ProcessosCliente.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -7,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   FilePlus, ArrowLeftRight, FileDown, Archive, Trash,
-  Pencil, Clock4, CornerDownLeft, LockOpen
+  Pencil, Clock4, CornerDownLeft, LockOpen, Users
 } from 'lucide-react'
 import UploadDocumentoExterno from '@/components/UploadDocumentoExterno'
 import {
@@ -16,7 +15,9 @@ import {
   DropdownMenuSubContent, DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu'
 import ModalAssinatura from '@/components/ModalAssinatura'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle
+} from '@/components/ui/dialog'
 
 interface Documento {
   id: number
@@ -35,6 +36,7 @@ interface Movimentacao {
 }
 interface Processo {
   id: number
+  numero: string
   tipo: string
   especificacao: string
   interessado: string
@@ -59,6 +61,7 @@ export default function ProcessosCliente({ processoId }: Props) {
   const [showUploadExterno, setShowUploadExterno] = useState(false)
   const [showAssinaturaModal, setShowAssinaturaModal] = useState(false)
   const [showHistoricoModal, setShowHistoricoModal] = useState(false)
+  const [showGerenciarAcesso, setShowGerenciarAcesso] = useState(false)
 
   const modelosInternos = [
     { modelo: 'memorando', label: '📄 Memorando' },
@@ -115,6 +118,10 @@ export default function ProcessosCliente({ processoId }: Props) {
     }
   }
 
+  async function baixarZip() {
+    window.open(`/api/processos/${id}/download-zip`, '_blank')
+  }
+
   async function arquivarProcesso() {
     try {
       const res = await fetch(`/api/processos/${id}/arquivar`, { method: 'PATCH' })
@@ -137,10 +144,6 @@ export default function ProcessosCliente({ processoId }: Props) {
       console.error(err)
       alert(err.message || 'Erro ao reabrir')
     }
-  }
-
-  async function baixarZip() {
-    window.open(`/api/processos/${id}/download-zip`, '_blank')
   }
 
   useEffect(() => {
@@ -216,7 +219,7 @@ export default function ProcessosCliente({ processoId }: Props) {
     <div className="flex h-screen">
       <aside className={`w-1/4 border-r bg-white p-4 overflow-auto transition-all duration-300 ${selected ? 'shadow-lg backdrop-blur-sm bg-white/80' : ''}`}>
         <button onClick={() => setSelected(null)} className="w-full text-left font-bold text-lg mb-4 hover:underline shadow-sm">
-          <span className="drop-shadow-md">Processo #{processo.id}</span>
+          <span className="drop-shadow-md">Processo #{processo.numero}</span>
         </button>
         <ul className="space-y-2">
           {documentos.map(doc => (
@@ -244,7 +247,6 @@ export default function ProcessosCliente({ processoId }: Props) {
       </aside>
 
       <div className="flex flex-col flex-1 p-6 overflow-auto">
-        {/* Botões */}
         <div className="flex flex-wrap gap-2 mb-4">
           <Button variant="ghost" onClick={() => router.push('/controle-de-processos')}>
             <CornerDownLeft className="w-4 h-4" /> Voltar
@@ -276,12 +278,7 @@ export default function ProcessosCliente({ processoId }: Props) {
                             body: formData,
                           })
 
-                          if (!res.ok) {
-                            const err = await res.json()
-                            console.error('[ERRO_CRIAR_DOC]', err)
-                            throw new Error(err?.error || 'Erro ao criar documento')
-                          }
-
+                          if (!res.ok) throw new Error('Erro ao criar documento')
                           const novoDocumento = await res.json()
                           carregarDados(novoDocumento.id)
                           window.open(
@@ -290,8 +287,8 @@ export default function ProcessosCliente({ processoId }: Props) {
                             'popup=yes,width=1000,height=800,scrollbars=yes,noopener'
                           )
                         } catch (err: any) {
-                          console.error('[ERRO_CRIACAO_DOCUMENTO_INTERNO]', err)
-                          alert(err.message || 'Erro desconhecido ao criar documento interno')
+                          console.error(err)
+                          alert(err.message || 'Erro desconhecido ao criar documento')
                         }
                       }}
                     >
@@ -320,6 +317,9 @@ export default function ProcessosCliente({ processoId }: Props) {
           <Button variant="outline" onClick={() => setShowHistoricoModal(true)}>
             <Clock4 className="w-4 h-4" /> Histórico
           </Button>
+          <Button variant="outline" onClick={() => setShowGerenciarAcesso(true)}>
+            <Users className="w-4 h-4" /> Gerenciar Acesso
+          </Button>
         </div>
 
         {showUploadExterno && (
@@ -337,6 +337,7 @@ export default function ProcessosCliente({ processoId }: Props) {
           <Card className="mb-4">
             <CardContent>
               <h2 className="text-xl font-semibold mb-2">Detalhes do Processo</h2>
+              <p><strong>Número:</strong> {processo.numero}</p>
               <p><strong>Tipo:</strong> {processo.tipo}</p>
               <p><strong>Interessado:</strong> {processo.interessado}</p>
               <p><strong>Acesso:</strong> {processo.acesso}</p>
@@ -370,6 +371,17 @@ export default function ProcessosCliente({ processoId }: Props) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showGerenciarAcesso} onOpenChange={setShowGerenciarAcesso}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar acesso ao processo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">(em breve: adicionar/remover colaboradores autorizados)</p>
           </div>
         </DialogContent>
       </Dialog>

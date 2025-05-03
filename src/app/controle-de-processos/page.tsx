@@ -18,9 +18,21 @@ import {
   Archive,
   Settings,
   Folder,
-  LogOut,
   ShieldCheck,
+  User,
+  LogOut,
+  KeyRound,
 } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -50,8 +62,6 @@ export default async function ControleDeProcessosPage() {
   if (!session?.user) {
     redirect("/login?callbackUrl=/controle-de-processos");
   }
-
-  console.log("Sessão carregada:", session); // ✅ debug para ver se setor vem corretamente
 
   const setorSelecionadoId = Number(session.user.setor);
   if (isNaN(setorSelecionadoId)) {
@@ -149,11 +159,42 @@ export default async function ControleDeProcessosPage() {
           <div className="flex items-center gap-4">
             <SelectSetor />
 
-            <form action="/api/auth/signout" method="post">
-              <Button type="submit" variant="outline" className="flex gap-2">
-                <LogOut className="w-4 h-4" /> Sair
-              </Button>
-            </form>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {session.user.name?.charAt(0).toUpperCase() ?? "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-gray-800">
+                    {session.user.name?.split(" ")[0] ?? "Usuário"}
+                  </span>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{session.user.name}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/perfil">
+                    <User className="w-4 h-4 mr-2" /> Meu Perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/perfil/alterar-senha">
+                    <KeyRound className="w-4 h-4 mr-2" /> Alterar Senha
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <form action="/api/auth/signout" method="post">
+                    <button type="submit" className="w-full flex items-center">
+                      <LogOut className="w-4 h-4 mr-2" /> Sair
+                    </button>
+                  </form>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

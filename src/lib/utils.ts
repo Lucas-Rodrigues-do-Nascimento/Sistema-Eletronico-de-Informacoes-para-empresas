@@ -41,30 +41,30 @@ export function separarProcessosPorSetor(
     const movs = proc.movimentacoes ?? [];
 
     if (movs.length === 0) {
-      // Sem movimentações: considera como gerado pelo setor atual
       processosGerados.push(proc);
       continue;
     }
 
-    const primeira = movs[0];
-    const ultima = movs[movs.length - 1];
+    const movimentacoesAtivas = movs.filter((m) => m.ativo);
+    if (movimentacoesAtivas.length === 0) {
+      continue;
+    }
 
-    // Verifica se o processo foi gerado pelo setor atual
-    const foiGeradoAqui = primeira.deSetor === setorId;
+    const manterNoOrigem = movimentacoesAtivas.some(
+      (m) => m.deSetor === setorId && m.manterAbertoNoSetorOrigem
+    );
 
-    // Verifica se o processo está ativo no setor atual
-    const estaAtivoAqui =
-      ultima.ativo && ultima.paraSetor === setorId;
+    const geradoAqui = movimentacoesAtivas.some(
+      (m) => m.deSetor === setorId && m.paraSetor === setorId
+    );
 
-    // Verifica se o processo permanece aberto no setor de origem
-    const manterNoOrigem =
-      ultima.manterAbertoNoSetorOrigem && ultima.deSetor === setorId;
+    const estaAtivoAqui = movimentacoesAtivas.some(
+      (m) => m.paraSetor === setorId
+    );
 
-    // Adiciona à lista de gerados se foi gerado aqui ou permanece no setor de origem
-    if (foiGeradoAqui || manterNoOrigem) {
+    if (manterNoOrigem || geradoAqui) {
       processosGerados.push(proc);
     } else if (estaAtivoAqui) {
-      // Caso contrário, se está ativo aqui, adiciona à lista de recebidos
       processosRecebidos.push(proc);
     }
   }

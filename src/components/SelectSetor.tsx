@@ -27,6 +27,9 @@ export default function SelectSetor() {
   const [erro, setErro] = useState(false)
 
   const setorAtual = session?.user?.setor ?? null
+  const permissoes: string[] = session?.user?.permissoes ?? []
+  const podeTrocarSetor = permissoes.includes('mudar_setor') // 👈 corrigido aqui
+
   const setorSelecionado = setores.find((s) => s.id === setorAtual)
 
   useEffect(() => {
@@ -58,25 +61,28 @@ export default function SelectSetor() {
       if (!res.ok) throw new Error('Erro ao atualizar setor')
 
       await update()
-
-      toast.success('✅ Setor alterado com sucesso!', {
-        duration: 4000,
-      })
-
+      toast.success('✅ Setor alterado com sucesso!', { duration: 4000 })
       setTimeout(() => {
         router.refresh()
       }, 500)
     } catch (err) {
       console.error(err)
-      toast.error('❌ Erro ao atualizar setor', {
-        duration: 4000,
-      })
+      toast.error('❌ Erro ao atualizar setor', { duration: 4000 })
     }
   }
 
   if (loading) return null
   if (erro) return <p className="text-red-500 text-sm">Erro ao carregar setores.</p>
   if (!setorAtual) return null
+
+  // 🔐 Caso o usuário não possa trocar de setor, apenas exibe o nome fixo
+  if (!podeTrocarSetor) {
+    return (
+      <div className="px-4 py-2 border rounded text-sm bg-gray-100 text-gray-700">
+        Setor: {setorSelecionado?.nome ?? '—'} (#{setorSelecionado?.id ?? '—'})
+      </div>
+    )
+  }
 
   return (
     <Select onValueChange={handleChange} defaultValue={String(setorAtual)}>

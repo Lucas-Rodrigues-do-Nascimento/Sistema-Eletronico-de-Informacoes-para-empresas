@@ -26,10 +26,11 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     const setorId = Number(session?.user?.setor)
+    const colaboradorId = Number(session?.user?.id)
 
-    if (!setorId || isNaN(setorId)) {
+    if (!setorId || isNaN(setorId) || !colaboradorId || isNaN(colaboradorId)) {
       return NextResponse.json(
-        { error: 'Setor do usuário não identificado' },
+        { error: 'Setor ou colaborador não identificado' },
         { status: 403 }
       )
     }
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
         acesso,
         arquivado: false,
         setorOrigem: { connect: { id: setorId } },
-        criador: { connect: { id: session.user.id } }, // ✅ Adicionado
+        criador: { connect: { id: colaboradorId } }, // ✅ CORRIGIDO
         movimentacoes: {
           create: {
             deSetor: setorId,
