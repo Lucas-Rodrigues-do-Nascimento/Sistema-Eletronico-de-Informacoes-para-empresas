@@ -40,14 +40,12 @@ export async function GET(
             nome: true,
             tipo: true,
             criadoEm: true,
+            assinadoEm: true,
+            assinadoPor: true,
+            cargoAssinatura: true,
           },
         },
-        movimentacoes: {
-          include: {
-            de: { select: { nome: true } },
-            para: { select: { nome: true } },
-          },
-        },
+        movimentacoes: true,
       },
     })
 

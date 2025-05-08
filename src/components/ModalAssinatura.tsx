@@ -25,7 +25,7 @@ export default function ModalAssinatura({ documentoId, onClose, onSuccess }: Pro
     setCarregando(true)
     setErro(null)
     try {
-      const res = await fetch(`/api/documento/${documentoId}/assinar`, {
+      const res = await fetch(`/api/documentos/${documentoId}/acoes/assinar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senha }),

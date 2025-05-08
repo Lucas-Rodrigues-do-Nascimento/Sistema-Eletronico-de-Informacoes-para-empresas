@@ -29,6 +29,6 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "src/types"
-  ],
+, "src/app/api/processos/pesquisar"  ],
   "exclude": ["node_modules"]
 }

@@ -15,7 +15,7 @@ export default function VerificarAssinaturaPage() {
     setErro(null)
     setResultado(null)
     try {
-      const res = await fetch(`/api/documento/${codigo}/verificar`)
+      const res = await fetch(`/api/documentos/${codigo}/acoes/verificar`)
       const data = await res.json()
       if (!res.ok) {
         throw new Error(data.error || 'Erro ao verificar assinatura.')

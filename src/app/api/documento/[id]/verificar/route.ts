@@ -4,6 +4,10 @@ import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * @deprecated Esta rota está mantida por compatibilidade, mas será removida em uma versão futura.
+ * Use a nova rota /api/documentos/[id]/acoes/verificar em seu lugar.
+ */
 export async function GET(
   req: NextRequest,
   context: { params: { id: string } }
@@ -33,12 +37,20 @@ export async function GET(
 
   const valido = hashAtual === documento.hashConteudo
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     valido,
     hashAtual,
     hashRegistrado: documento.hashConteudo,
     mensagem: valido
       ? '✅ Documento íntegro e original.'
-      : '⚠️ Documento foi alterado desde a assinatura.'
+      : '⚠️ Documento foi alterado desde a assinatura.',
+    aviso: 'Esta rota está depreciada. Use /api/documentos/' + codigo + '/acoes/verificar em seu lugar.'
   })
+  
+  // Adicionar cabeçalho HTTP de depreciação
+  response.headers.set('Deprecation', 'true')
+  response.headers.set('Sunset', '2024-12-31') // Data sugerida para remoção
+  response.headers.set('Link', '</api/documentos/' + codigo + '/acoes/verificar>; rel="successor-version"')
+  
+  return response
 }

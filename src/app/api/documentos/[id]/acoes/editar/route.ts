@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
 import { generatePDFFromHTML } from '@/lib/pdfGenerator'
+import prisma from '@/lib/prisma'
 
 /**
- * @deprecated Esta rota está mantida por compatibilidade, mas será removida em uma versão futura.
- * Use a nova rota /api/documentos/[id]/acoes/editar em seu lugar.
+ * Rota unificada para edição de documentos, com mesma funcionalidade
+ * da rota /api/documento/[id]/editar, mas seguindo o padrão de rotas no plural.
  */
 export async function POST(
   request: NextRequest,
-  context: Awaited<{ params: { id: string } }>
+  context: { params: { id: string } }
 ) {
   const docId = Number(context.params.id)
   const body = await request.json()
@@ -33,24 +33,16 @@ export async function POST(
       },
     })
 
-    // Adicionar cabeçalho de depreciação
-    const response = NextResponse.json({ 
+    return NextResponse.json({ 
       sucesso: true, 
       documento,
-      aviso: 'Esta rota está depreciada. Use /api/documentos/[id]/acoes/editar em seu lugar.'
+      mensagem: 'Documento atualizado usando a nova API unificada'
     })
-    
-    // Adicionar cabeçalho HTTP de depreciação
-    response.headers.set('Deprecation', 'true')
-    response.headers.set('Sunset', '2024-12-31') // Data sugerida para remoção
-    response.headers.set('Link', '</api/documentos/' + docId + '/acoes/editar>; rel="successor-version"')
-    
-    return response
   } catch (error: any) {
-    console.error('[ERRO_EDITAR_DOCUMENTO][DEPRECATED]', error?.message || error)
+    console.error('[ERRO_EDITAR_DOCUMENTO][ROTA_UNIFICADA]', error?.message || error)
     return NextResponse.json(
       { error: 'Erro ao editar documento', detalhe: error?.message },
       { status: 500 }
     )
   }
-}
+} 

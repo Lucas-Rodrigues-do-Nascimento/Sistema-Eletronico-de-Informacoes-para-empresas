@@ -1,28 +1,30 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn, useSession } from 'next-auth/react'
 
 export default function LoginPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // ✅ Garante que só redireciona se houver sessão carregada
+  // Redireciona se já estiver autenticado
   useEffect(() => {
     if (
       status === 'authenticated' &&
       session?.user?.email &&
       session?.user?.id
     ) {
-      router.replace('/controle-de-processos')
+      const redirectTo = searchParams.get('callbackUrl') || '/controle-de-processos'
+      router.replace(redirectTo)
     }
-  }, [status, session, router])
+  }, [status, session, router, searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,10 +41,11 @@ export default function LoginPage() {
       redirect: false,
       email: username,
       senha: password,
+      callbackUrl: searchParams.get('callbackUrl') || '/controle-de-processos',
     })
 
     if (res?.ok) {
-      router.push('/controle-de-processos')
+      router.push(res.url || '/controle-de-processos')
     } else {
       setError('Credenciais inválidas ou erro ao autenticar.')
     }

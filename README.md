@@ -23,7 +23,7 @@ O **PROTON** é um sistema administrativo interno focado em **gestão de process
 - **bcryptjs** (criptografia de senhas)
 - **pdf-lib** (geração e assinatura de PDFs)
 - **SHA-256** (controle de integridade de documentos)
-- **Puppeteer** (planejado para renderizar documentos em PDF)
+- **Puppeteer** (geração de PDFs a partir de HTML)
 
 ### 🔹 Outras Tecnologias
 - **Radix UI Popover + Command** (para select multi seleção moderna)
@@ -45,6 +45,22 @@ O **PROTON** é um sistema administrativo interno focado em **gestão de process
 - ✅ **Visualização e download de documentos em PDF**
 
 ---
+
+## 🚀 Melhorias Recentes
+
+### Refatoração e Organização do Código (2024)
+
+Recentemente implementamos várias melhorias na estrutura do código:
+
+- ✅ **Serviço unificado de geração de PDF** - Eliminação de código duplicado
+- ✅ **Padronização das rotas de API** - Consistência nos endpoints
+- ✅ **Melhoria na segurança de documentos** - Validação adicional de tramitação
+- ✅ **APIs unificadas para operações em documentos** - Melhor organização
+
+Veja mais detalhes em [README-REFATORACAO.md](./README-REFATORACAO.md).
+
+---
+
 ## 🏗️ Estrutura do Projeto:
 
 📦 src/
@@ -78,7 +94,8 @@ O **PROTON** é um sistema administrativo interno focado em **gestão de process
  ┣ 📂 lib/
  ┃ ┣ 📜 prisma.ts                # Configuração do Prisma Client para acesso ao banco
  ┃ ┣ 📜 utils.ts                 # Funções utilitárias (ex: cn() para classes Tailwind)
- ┃ ┗ 📜 auth.ts                  # (opcional) Gerenciamento de autenticação e sessão
+ ┃ ┣ 📜 pdfGenerator.ts          # Serviço unificado de geração de PDF
+ ┃ ┗ 📜 auth.ts                  # Gerenciamento de autenticação e sessão
  ┗ 📂 prisma/
    ┣ 📜 schema.prisma             # Definição dos modelos do banco de dados Prisma (Colaborador, Setor, Permissão, Processo, etc.)
    ┗ 📜 seed.ts                   # Script para inserir dados iniciais no banco (ex: permissões padrão, setores)

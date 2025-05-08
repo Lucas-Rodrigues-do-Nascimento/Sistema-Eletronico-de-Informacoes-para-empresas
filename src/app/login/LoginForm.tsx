@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn, useSession } from 'next-auth/react'
 
-export default function LoginForm() {
-  const { data: session } = useSession()
+export default function LoginPage() {
+  const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const callbackUrl = searchParams.get('callbackUrl') || '/controle-de-processos'
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -14,10 +17,14 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (session?.user) {
-      router.push('/controle-de-processos')
+    if (
+      status === 'authenticated' &&
+      session?.user?.email &&
+      session?.user?.id
+    ) {
+      router.replace(callbackUrl)
     }
-  }, [session, router])
+  }, [status, session, router, callbackUrl])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,10 +41,11 @@ export default function LoginForm() {
       redirect: false,
       email: username,
       senha: password,
+      callbackUrl,
     })
 
-    if (res?.ok) {
-      router.push('/controle-de-processos')
+    if (res?.ok && res.url) {
+      router.push(res.url)
     } else {
       setError('Credenciais inválidas ou erro ao autenticar.')
     }
@@ -45,11 +53,65 @@ export default function LoginForm() {
     setLoading(false)
   }
 
+  if (status === 'loading') return null
+
   return (
-    // ... mesma interface HTML aqui (copiar do anterior)
-    // pode deixar só <form> se quiser testar primeiro
-    <form onSubmit={handleLogin}>
-      {/* campos... */}
-    </form>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-indigo-100 via-white to-blue-100 px-4">
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-md border border-gray-200 rounded-2xl shadow-xl p-8">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-500 via-indigo-500 to-blue-500 flex items-center justify-center shadow-lg">
+            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mt-4">PROTON</h1>
+          <p className="text-sm text-gray-500">Processo Online de Tramitação Organizacional</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">E-mail</label>
+            <input
+              id="username"
+              type="text"
+              placeholder="exemplo@email.com"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-xl text-sm shadow focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Senha</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-xl text-sm shadow focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-center text-sm">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2 rounded-xl text-white bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 hover:from-indigo-600 hover:to-purple-600 transition-all font-semibold shadow-md"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+
+        <div className="mt-4 text-center">
+          <a href="#" className="text-sm text-indigo-600 hover:underline">Esqueci minha senha</a>
+        </div>
+
+        <footer className="mt-6 text-center text-xs text-gray-400">
+          © 2025 Sistema PROTON. Todos os direitos reservados.
+        </footer>
+      </div>
+    </div>
   )
 }
